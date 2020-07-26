@@ -1,5 +1,6 @@
-from fbchat import log, Client
+from fbchat import Client
 from fbchat.models import *
+import google.cloud.logging
 
 
 # Subclass fbchat.Client and override required methods
@@ -8,7 +9,7 @@ class EchoBot(Client):
     tuples = list()
 
     def __init__(self, email, pw, session_cookies):
-        self.thread_id = "3724459277571389"
+        self.thread_id = "1758853220817730"
         self.thread_type = ThreadType.GROUP
         super(EchoBot, self).__init__(email, pw, session_cookies)
 
@@ -56,6 +57,9 @@ class EchoBot(Client):
     ):
         self.set_group_users()
 
+logclient = google.cloud.logging.Client()
+logclient.get_default_handler()
+logclient.setup_logging()
 
 client = EchoBot('matthew.botte69123@gmail.com', '*jK`=s:5kV]}Ub>*',
                  session_cookies="{'c_user': '100053935090694', 'datr': 'vvQdX9HmsHfiNUQx8wjcCMm1', "
