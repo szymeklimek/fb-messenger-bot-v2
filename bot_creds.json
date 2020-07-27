@@ -1,0 +1,7 @@
+{
+  "email": "your_email",
+  "pw": "your_password",
+  "thread_id": "group_id",
+  "img_folder" : "your_google_drive_folder",
+  "cookies": "session cookies for bot logging go here"
+}
