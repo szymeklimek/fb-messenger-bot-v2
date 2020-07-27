@@ -1,2 +1,6 @@
 venv/
 .idea/
+src/__pycache__/
+drive_creds.json
+bot_creds.json
+token.pickle

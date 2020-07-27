@@ -1,15 +1,20 @@
+import os
 from fbchat import Client
 from fbchat.models import *
-import google.cloud.logging
+import driveapi
+import json
 
 
-# Subclass fbchat.Client and override required methods
 class EchoBot(Client):
-
     tuples = list()
 
-    def __init__(self, email, pw, session_cookies):
-        self.thread_id = "1758853220817730"
+    help_message = "Available commands:\n'Bot tag' => Tags all of the conversation members.\n'Bot meme' => Sends a " \
+                   "random meme.\n'Bot link' => Sends a Google Drive link for uploading memes. "
+
+    def __init__(self, email, pw, thread_id, img_folder, session_cookies):
+        self.drive_service = driveapi.DriveSetup()
+        self.thread_id = thread_id
+        self.img_folder_link = img_folder
         self.thread_type = ThreadType.GROUP
         super(EchoBot, self).__init__(email, pw, session_cookies)
 
@@ -27,50 +32,93 @@ class EchoBot(Client):
         self.markAsDelivered(thread_id, message_object.uid)
         self.markAsRead(thread_id)
 
-        if message_object.text == "Bot tag" and thread_type == self.thread_type and thread_id == self.thread_id:
+        if message_object.text == "Bot help" and thread_id == self.thread_id and thread_type == self.thread_type:
+            self.reactToMessage(message_object.uid, MessageReaction.YES)
+            self.send(Message(
+                text=self.help_message,
+                reply_to_id=message_object.uid),
+                thread_id=thread_id,
+                thread_type=thread_type
+            )
 
+        if message_object.text == "Bot tag" and thread_id == self.thread_id and thread_type == self.thread_type:
+            self.reactToMessage(message_object.uid, MessageReaction.YES)
             tag = "@Everyone"
 
-            msg = Message(text=tag, mentions=[Mention(thread_id=t_id, offset=0, length=len(t_name)) for t_id,
-            t_name in self.tuples])
+            msg = Message(text=tag, mentions=[
+                Mention(thread_id=t_id,
+                        offset=0, length=len(t_name)) for t_id, t_name in self.tuples],
+                        reply_to_id=message_object.uid)
             self.send(msg, thread_id=thread_id, thread_type=thread_type)
 
+        if message_object.text == "Bot link" and thread_id == self.thread_id and thread_type == self.thread_type:
+            self.reactToMessage(message_object.uid, MessageReaction.YES)
+            self.send(Message(
+                text="Meme folder link: \n" + self.img_folder_link,
+                reply_to_id=message_object.uid),
+                thread_id=thread_id,
+                thread_type=thread_type
+            )
+
+        if message_object.text == "Bot meme" and thread_id == self.thread_id and thread_type == self.thread_type:
+            self.reactToMessage(message_object.uid, MessageReaction.YES)
+            img = self.drive_service.create_random_img()
+            self.sendLocalFiles(
+                img,
+                thread_id=self.thread_id,
+                thread_type=self.thread_type,
+            )
+            os.remove(img)
+
     def onPeopleAdded(
-        self,
-        mid=None,
-        added_ids=None,
-        author_id=None,
-        thread_id=None,
-        ts=None,
-        msg=None,
+            self,
+            mid=None,
+            added_ids=None,
+            author_id=None,
+            thread_id=None,
+            ts=None,
+            msg=None,
     ):
         self.set_group_users()
 
     def onPersonRemoved(
-        self,
-        mid=None,
-        removed_id=None,
-        author_id=None,
-        thread_id=None,
-        ts=None,
-        msg=None,
+            self,
+            mid=None,
+            removed_id=None,
+            author_id=None,
+            thread_id=None,
+            ts=None,
+            msg=None,
     ):
         self.set_group_users()
 
-logclient = google.cloud.logging.Client()
-logclient.get_default_handler()
-logclient.setup_logging()
+    def send_greeting(self):
+        self.send(Message(
+            text="I'm alive!\nType in 'Bot help' for available commands."),
+            thread_id=self.thread_id,
+            thread_type=self.thread_type
+        )
 
-client = EchoBot('matthew.botte69123@gmail.com', '*jK`=s:5kV]}Ub>*',
-                 session_cookies="{'c_user': '100053935090694', 'datr': 'vvQdX9HmsHfiNUQx8wjcCMm1', "
-                                 "'fr': '1069E9ozoKcxcfE5s.AWUgFyXfJpNDLPJztIAt1noBsgI.BfHfS-.aF.AAA.0.0.BfHfS"
-                                 "-.AWXQHQv3', 'noscript': '1', 'sb': 'vvQdX9B5blaGXc5EizxVOMcv', "
-                                 "'spin': 'r.1002420352_b.trunk_t.1595798720_s.1_v.2_', "
-                                 "'xs': '24%3AZKTsBfIjWnYnkg%3A2%3A1595798718%3A-1%3A-1'}")
 
-client.set_group_users()
+def main():
+    os.chdir("..")
+    with open("bot_creds.json", 'r') as file:
+        bot_data = json.load(file)
 
-client.listen()
+    client = EchoBot(
+        bot_data["email"],
+        bot_data["pw"],
+        bot_data["thread_id"],
+        bot_data["img_folder"],
+        session_cookies=str(bot_data["cookies"])
+    )
+    client.set_group_users()
+    client.send_greeting()
+    client.listen()
+
+
+if __name__ == '__main__':
+    main()
 
 # thread_id = "3724459277571389"
 # thread_type = ThreadType.GROUP
