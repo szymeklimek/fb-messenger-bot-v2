@@ -19,6 +19,7 @@ class DriveSetup:
         self.SCOPES = ['https://www.googleapis.com/auth/drive.metadata',
                        'https://www.googleapis.com/auth/drive']
         self.drive_service = None
+        self.folder_id = "'1OoTovBUaprMrJeuJ0ZlLq92c-RiOweXN'"
         self.setup_service()
 
     def setup_service(self):
@@ -42,17 +43,20 @@ class DriveSetup:
 
         img_path = "img.jpg"
         result = self.drive_service.files().list(
-            q="mimeType = 'image/jpeg' and '1OoTovBUaprMrJeuJ0ZlLq92c-RiOweXN' in parents",
+            q="mimeType = 'image/jpeg' and " + self.folder_id + " in parents",
             spaces='drive',
         ).execute()
         imglist = result.get('files', [])
-        img_id = random.choice(imglist).get('id')
-        file = self.drive_service.files().get_media(fileId=img_id)
-        fh = io.FileIO(img_path, 'wb')
-        downloader = http.MediaIoBaseDownload(fh, file)
-        done = False
-        while done is False:
-            status, done = downloader.next_chunk()
-            print("Download %d%%." % int(status.progress() * 100))
+        if imglist:
+            img_id = random.choice(imglist).get('id')
+            file = self.drive_service.files().get_media(fileId=img_id)
+            fh = io.FileIO(img_path, 'wb')
+            downloader = http.MediaIoBaseDownload(fh, file)
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+                print("Download %d%%." % int(status.progress() * 100))
 
-        return img_path
+            return img_path
+        else:
+            return None
