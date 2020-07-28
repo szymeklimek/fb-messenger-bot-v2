@@ -1,4 +1,5 @@
 import os
+import argparse
 from fbchat import Client
 from fbchat.models import *
 import driveapi
@@ -13,17 +14,19 @@ class MessengerBot(Client):
     help_message = "Available commands:\n'Bot tag' => Tags all of the conversation members.\n'Bot meme' => Sends a " \
                    "random meme.\n'Bot link' => Sends a Google Drive link for uploading memes. "
 
-    def __init__(self, email, pw, thread_list, img_folder, session_cookies):
+    def __init__(self, email, pw, thread_list, img_folder, cmd_args, session_cookies):
         self.drive_service = driveapi.DriveSetup()
         self.thread_list = thread_list
         self.img_folder_link = img_folder
+        self.cmd_args = cmd_args
         self.thread_type = ThreadType.GROUP
         self.command_dict = {"Bot help": self.cmd_show_help, "Bot tag": self.cmd_tag_users,
                              "Bot meme": self.cmd_send_img, "Bot link": self.cmd_send_link}
         super(MessengerBot, self).__init__(email, pw, session_cookies)
 
         self.set_group_users(self.thread_list)
-        self.send_greeting()
+        if not self.cmd_args.nogreeting:
+            self.send_greeting()
 
     def set_group_users(self, thread_list):
         for thread_id in thread_list:
@@ -108,7 +111,23 @@ class MessengerBot(Client):
 
 
 def main():
+
     os.chdir("..")
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-gl', '--googlelog', action='store_true', help="enables google cloud logging")
+    parser.add_argument('-ng', '--nogreeting', action='store_true', help="disables greeting message")
+
+    args = parser.parse_args()
+
+    if args.googlelog:
+
+        import google.cloud.logging
+        logclient = google.cloud.logging.Client()
+        logclient.get_default_handler()
+        logclient.setup_logging()
+
     with open("bot_creds.json", 'r') as file:
         bot_data = json.load(file)
 
@@ -118,6 +137,7 @@ def main():
         bot_data["pw"],
         bot_data["thread_list"],
         bot_data["img_folder"],
+        args,
         session_cookies=str(bot_data["cookies"])
     )
 
