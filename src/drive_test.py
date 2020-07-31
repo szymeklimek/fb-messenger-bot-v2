@@ -1,4 +1,7 @@
 from drive_api import DriveSetup
+import os
+
+os.chdir("..")
 
 drive_client = DriveSetup()
 
