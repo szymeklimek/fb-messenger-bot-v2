@@ -47,19 +47,21 @@ class MessengerBot(Client):
         # self.markAsDelivered(thread_id, message_object.uid)
         # self.markAsRead(thread_id)
 
-        cmd = message_object.text.split(" ")[:3]
+        cmd_list = message_object.text.split(" ")[:3]
 
-        if thread_type == self.thread_type and thread_id in self.thread_list and cmd[0] == "Amad":
+        if thread_type == self.thread_type and thread_id in self.thread_list and cmd_list[0] == "Amad":
 
-            if len(cmd):
-                msg = Message(text="Do you like me?",
-                              quick_replies=[QuickReplyText(title="Yes!"), QuickReplyText(title="No")],
+            if len(cmd_list) == 1:
+                msg = Message(text="Wassup?",
+                              quick_replies=[
+                                  QuickReplyText(title="Amad " + key)
+                                  for key in self.command_dict if str(key) is not "calc"],
                               reply_to_id=message_object.uid)
 
                 self.send(msg, thread_id=thread_id, thread_type=thread_type)
 
-            elif cmd[1] in self.command_dict:
-                self.command_dict[cmd[1]](message_object, thread_id, thread_type, command=cmd)
+            elif cmd_list[1] in self.command_dict:
+                self.command_dict[cmd_list[1]](message_object, thread_id, thread_type, command=cmd_list)
 
     def onPeopleAdded(self, mid, added_ids, author_id, thread_id, ts, msg):
         self.set_group_users(thread_id)
