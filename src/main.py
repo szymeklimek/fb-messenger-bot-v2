@@ -30,6 +30,8 @@ class MessengerBot(Client):
                              "calc": self.cmd_do_calc}
         super(MessengerBot, self).__init__(email, pw, max_tries=max_tries, session_cookies=session_cookies)
 
+        self.set_group_users(self.thread_list)
+
         if not self.cmd_args.nogreeting:
             self.send_greeting()
 
@@ -45,16 +47,18 @@ class MessengerBot(Client):
             self.tuples_dict[thread_id] = user_tuples
 
     def onMessage(self, author_id, message_object, thread_id, thread_type, **kwargs):
-        # self.markAsDelivered(thread_id, message_object.uid)
-        # self.markAsRead(thread_id)
+        self.markAsDelivered(thread_id, message_object.uid)
+        self.markAsRead(thread_id)
 
         if message_object.text is not None:
-            cmd_list = message_object.text.split(" ")[:3]
+            arg_list = message_object.text.split(" ")[:5]
 
-            if thread_type == self.thread_type and thread_id in self.thread_list and cmd_list[0] == self.bot_name:
+            if thread_type == self.thread_type and thread_id in self.thread_list and arg_list[0] == self.bot_name:
 
-                if cmd_list[1] in self.command_dict:
-                    self.command_dict[cmd_list[1]](message_object, thread_id, thread_type, command=cmd_list)
+                command = arg_list[1]
+
+                if command in self.command_dict:
+                    self.command_dict[command](message_object, thread_id, thread_type, arguments=arg_list[2:])
 
     def onPeopleAdded(self, mid, added_ids, author_id, thread_id, ts, msg):
         self.set_group_users(thread_id)
@@ -114,7 +118,8 @@ class MessengerBot(Client):
         result = None
 
         try:
-            eq = kwargs["command"][2].replace("^", "**")
+            eq = kwargs["arguments"][0]
+            eq.replace("^", "**")
             result = str(eval(eq, {"__builtins__": None}, {}))
         except (TypeError, SyntaxError, NameError, ZeroDivisionError):
             result = "Wrong syntax :(\nIs there an error in your equation?"
@@ -148,12 +153,11 @@ def main():
 
     if not args.nogooglelog:
 
-        import logging
         import google.cloud.logging
 
         logclient = google.cloud.logging.Client()
         logclient.get_default_handler()
-        logclient.setup_logging(logging.INFO)
+        logclient.setup_logging()
 
     with open('bot_creds.json', 'r') as file:
         bot_data = json.load(file)
