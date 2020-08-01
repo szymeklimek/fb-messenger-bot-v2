@@ -116,7 +116,7 @@ class MessengerBot(Client):
         try:
             eq = kwargs["command"][2].replace("^", "**")
             result = str(eval(eq, {"__builtins__": None}, {}))
-        except (SyntaxError, NameError, ZeroDivisionError):
+        except (TypeError, SyntaxError, NameError, ZeroDivisionError):
             result = "Wrong syntax :(\nIs there an error in your equation?"
         finally:
             self.reactToMessage(message_object.uid, MessageReaction.YES)
@@ -150,13 +150,10 @@ def main():
 
         import logging
         import google.cloud.logging
-        from google.cloud.logging.handlers import CloudLoggingHandler
 
         logclient = google.cloud.logging.Client()
-        handler = CloudLoggingHandler(logclient)
-        cloud_logger = logging.getLogger('cloudLogger')
-        cloud_logger.setLevel(logging.INFO)
-        cloud_logger.addHandler(handler)
+        logclient.get_default_handler()
+        logclient.setup_logging(logging.INFO)
 
     with open('bot_creds.json', 'r') as file:
         bot_data = json.load(file)
