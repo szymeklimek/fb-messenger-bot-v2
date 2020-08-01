@@ -51,7 +51,12 @@ class MessengerBot(Client):
 
         if thread_type == self.thread_type and thread_id in self.thread_list and cmd[0] == "Amad":
 
-            if cmd[1] in self.command_dict:
+            if len(cmd):
+                msg = Message(text="Do you like me?",
+                                  quick_replies=[QuickReplyText(title="Yes!"), QuickReplyText(title="No")])
+                self.send(msg)
+
+            elif cmd[1] in self.command_dict:
                 self.command_dict[cmd[1]](message_object, thread_id, thread_type, command=cmd)
 
     def onPeopleAdded(self, mid, added_ids, author_id, thread_id, ts, msg):
@@ -113,8 +118,8 @@ class MessengerBot(Client):
 
         try:
             eq = kwargs["command"][2].replace("^", "**")
-            result = str(eval(eq))
-        except (SyntaxError, NameError):
+            result = str(eval(eq, {"__builtins__": None}, {}))
+        except (SyntaxError, NameError, ZeroDivisionError):
             result = "Wrong syntax :(\nIs there an error in your equation?"
         finally:
             self.reactToMessage(message_object.uid, MessageReaction.YES)
