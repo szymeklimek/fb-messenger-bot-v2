@@ -13,9 +13,11 @@ class MessengerBot(Client):
     # dictionary - key:thread_id, value:list of user tuples - (user_id, name)
     tuples_dict = collections.defaultdict(list)
 
-    help_message = "Available commands:\n'Amad tag' => Tags all of the conversation members.\n'Amad meme' => Sends a " \
-                   "random meme.\n'Amad link' => Sends a Google Drive link for uploading memes.\n'Amad calc [eq]' => " \
-                   "Calculate an equation. "
+    bot_name = "Amad"
+
+    help_message = "Available commands:\n'" + bot_name + " tag' => Tags all of the conversation members.\n'" + bot_name + " meme' => Sends a " \
+                   "random meme.\n'" + bot_name + " link' => Sends a Google Drive link for uploading memes.\n'" + bot_name + " calc [eq]' => " \
+                   "Calculate an equation."
 
     def __init__(self, email, pw, thread_list, img_folder, cmd_args, max_tries, session_cookies):
         self.drive_service = DriveSetup()
@@ -28,7 +30,6 @@ class MessengerBot(Client):
                              "calc": self.cmd_do_calc}
         super(MessengerBot, self).__init__(email, pw, max_tries=max_tries, session_cookies=session_cookies)
 
-        self.set_group_users(self.thread_list)
         if not self.cmd_args.nogreeting:
             self.send_greeting()
 
@@ -47,21 +48,13 @@ class MessengerBot(Client):
         # self.markAsDelivered(thread_id, message_object.uid)
         # self.markAsRead(thread_id)
 
-        cmd_list = message_object.text.split(" ")[:3]
+        if message_object.text is not None:
+            cmd_list = message_object.text.split(" ")[:3]
 
-        if thread_type == self.thread_type and thread_id in self.thread_list and cmd_list[0] == "Amad":
+            if thread_type == self.thread_type and thread_id in self.thread_list and cmd_list[0] == self.bot_name:
 
-            if len(cmd_list) == 1:
-                msg = Message(text="Wassup?",
-                              quick_replies=[
-                                  QuickReplyText(title="Amad " + key)
-                                  for key in self.command_dict if str(key) is not "calc"],
-                              reply_to_id=message_object.uid)
-
-                self.send(msg, thread_id=thread_id, thread_type=thread_type)
-
-            elif cmd_list[1] in self.command_dict:
-                self.command_dict[cmd_list[1]](message_object, thread_id, thread_type, command=cmd_list)
+                if cmd_list[1] in self.command_dict:
+                    self.command_dict[cmd_list[1]](message_object, thread_id, thread_type, command=cmd_list)
 
     def onPeopleAdded(self, mid, added_ids, author_id, thread_id, ts, msg):
         self.set_group_users(thread_id)
@@ -85,7 +78,7 @@ class MessengerBot(Client):
         msg = Message(text=tag, mentions=[
             Mention(thread_id=t_id,
                     offset=0, length=len(t_name)) for t_id, t_name in self.tuples_dict[thread_id]],
-                      reply_to_id=message_object.uid)
+                    reply_to_id=message_object.uid)
         self.send(msg, thread_id=thread_id, thread_type=thread_type)
 
     def cmd_send_img(self, message_object, thread_id, thread_type, **kwargs):
@@ -137,7 +130,7 @@ class MessengerBot(Client):
     def send_greeting(self):
         for thread_id in self.thread_list:
             self.send(Message(
-                text="I'm alive!\nType in 'Amad help' for available commands."),
+                text="I'm alive!\nType in '" + self.bot_name + " help' for available commands."),
                 thread_id=thread_id,
                 thread_type=self.thread_type
             )
@@ -154,10 +147,16 @@ def main():
     args = parser.parse_args()
 
     if not args.nogooglelog:
+
+        import logging
         import google.cloud.logging
+        from google.cloud.logging.handlers import CloudLoggingHandler
+
         logclient = google.cloud.logging.Client()
-        logclient.get_default_handler()
-        logclient.setup_logging()
+        handler = CloudLoggingHandler(logclient)
+        cloud_logger = logging.getLogger('cloudLogger')
+        cloud_logger.setLevel(logging.INFO)
+        cloud_logger.addHandler(handler)
 
     with open('bot_creds.json', 'r') as file:
         bot_data = json.load(file)
