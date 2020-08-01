@@ -13,8 +13,8 @@ class MessengerBot(Client):
     # dictionary - key:thread_id, value:list of user tuples - (user_id, name)
     tuples_dict = collections.defaultdict(list)
 
-    help_message = "Available commands:\n'Bot tag' => Tags all of the conversation members.\n'Bot meme' => Sends a " \
-                   "random meme.\n'Bot link' => Sends a Google Drive link for uploading memes.\n'Bot calc [eq]' => " \
+    help_message = "Available commands:\n'Amad tag' => Tags all of the conversation members.\n'Amad meme' => Sends a " \
+                   "random meme.\n'Amad link' => Sends a Google Drive link for uploading memes.\n'Amad calc [eq]' => " \
                    "Calculate an equation. "
 
     def __init__(self, email, pw, thread_list, img_folder, cmd_args, max_tries, session_cookies):
@@ -44,8 +44,8 @@ class MessengerBot(Client):
             self.tuples_dict[thread_id] = user_tuples
 
     def onMessage(self, author_id, message_object, thread_id, thread_type, **kwargs):
-        #self.markAsDelivered(thread_id, message_object.uid)
-        #self.markAsRead(thread_id)
+        # self.markAsDelivered(thread_id, message_object.uid)
+        # self.markAsRead(thread_id)
 
         cmd = message_object.text.split(" ")[:3]
 
@@ -53,8 +53,10 @@ class MessengerBot(Client):
 
             if len(cmd):
                 msg = Message(text="Do you like me?",
-                                  quick_replies=[QuickReplyText(title="Yes!"), QuickReplyText(title="No")])
-                self.send(msg)
+                              quick_replies=[QuickReplyText(title="Yes!"), QuickReplyText(title="No")],
+                              reply_to_id=message_object.uid)
+
+                self.send(msg, thread_id=thread_id, thread_type=thread_type)
 
             elif cmd[1] in self.command_dict:
                 self.command_dict[cmd[1]](message_object, thread_id, thread_type, command=cmd)
@@ -133,7 +135,7 @@ class MessengerBot(Client):
     def send_greeting(self):
         for thread_id in self.thread_list:
             self.send(Message(
-                text="I'm alive!\nType in 'Bot help' for available commands."),
+                text="I'm alive!\nType in 'Amad help' for available commands."),
                 thread_id=thread_id,
                 thread_type=self.thread_type
             )
