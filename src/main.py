@@ -44,12 +44,12 @@ class MessengerBot(Client):
             self.tuples_dict[thread_id] = user_tuples
 
     def onMessage(self, author_id, message_object, thread_id, thread_type, **kwargs):
-        self.markAsDelivered(thread_id, message_object.uid)
-        self.markAsRead(thread_id)
+        #self.markAsDelivered(thread_id, message_object.uid)
+        #self.markAsRead(thread_id)
 
         cmd = message_object.text.split(" ")[:3]
 
-        if thread_type == self.thread_type and thread_id in self.thread_list and cmd[0] == "Bot":
+        if thread_type == self.thread_type and thread_id in self.thread_list and cmd[0] == "Amad":
 
             if cmd[1] in self.command_dict:
                 self.command_dict[cmd[1]](message_object, thread_id, thread_type, command=cmd)
@@ -156,6 +156,8 @@ def main():
     if os.path.exists('cookies.pickle'):
         with open('cookies.pickle', 'rb') as token:
             cookies = pickle.load(token)
+    else:
+        cookies = None
 
     # noinspection PyTypeChecker
     client = MessengerBot(
